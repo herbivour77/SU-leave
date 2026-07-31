@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SU Singapore — Leave Calendar</title>
+<style>
+  :root{
+    --navy: #16305c;
+    --navy-deep: #0e2144;
+    --gold: #c79a3d;
+    --gold-soft: #e8cf8f;
+    --cream: #fbf8f1;
+    --sage: #7c9a76;
+    --sage-soft: #d8e6d3;
+    --coral: #d9714e;
+    --ink: #23324a;
+    --line: #dfe3ea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--cream);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    padding: 28px;
+  }
+  #connBanner{
+    display:none;
+    background:#f6ddd2; color:#a1462a; font-size:12.5px; font-weight:600;
+    text-align:center; padding:8px 20px; max-width:1640px; margin:0 auto 12px auto; border-radius:6px;
+  }
+  .sheet{
+    max-width: 1640px;
+    margin: 0 auto;
+    background: #fff;
+    border: 2px solid var(--navy);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(20,40,80,0.12);
+  }
+
+  /* ---------- HEADER ---------- */
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 26px 40px 20px 40px;
+    border-bottom: 3px solid var(--navy);
+    background: linear-gradient(180deg, #ffffff 0%, #fbf8f1 100%);
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .brand{ display:flex; align-items:center; gap:16px; }
+  .mark{ width:52px; height:52px; flex-shrink:0; }
+  .brand-text .su{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--navy);
+    letter-spacing: 1px;
+    line-height:1;
+  }
+  .brand-text .sub{
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .title-block{ text-align:left; flex:1; margin-left: 34px; min-width:220px; }
+  .title-block h1{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 800;
+    font-size: 34px;
+    color: var(--navy);
+    margin: 0;
+    letter-spacing: 1px;
+  }
+  .title-block .tagline{
+    font-style: italic;
+    font-family: Georgia, serif;
+    color: var(--gold);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .back-btn{
+    display:inline-block;
+    background: transparent;
+    color: var(--navy);
+    border: 1.5px solid var(--navy);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: .5px;
+    text-decoration:none;
+    padding: 11px 20px;
+    border-radius: 6px 16px 6px 16px;
+    white-space: nowrap;
+  }
+  .back-btn:hover{ background: rgba(22,48,92,0.06); }
+
+  /* ---------- YEAR NAV ---------- */
+  .year-nav{
+    display:flex; align-items:center; justify-content:center; gap:22px;
+    padding: 22px 20px 6px 20px;
+  }
+  .year-nav button{
+    background: var(--navy); color:#fff; border:none; width:40px; height:40px;
+    border-radius: 50%; font-size:19px; cursor:pointer; font-weight:700;
+  }
+  .year-nav button:hover{ background: var(--navy-deep); }
+  .year-nav .year-label{
+    font-family: Georgia, serif; font-weight:800; font-size:26px; color:var(--navy); min-width:100px; text-align:center;
+  }
+
+  /* ---------- BODY / MONTH GRID ---------- */
+  .cal-body{ padding: 14px 36px 36px 36px; }
+  .months-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+  }
+  .month-card{
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow:hidden;
+  }
+  .month-head{
+    background: var(--navy);
+    color:#fff;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1.2px;
+    text-align:center;
+    padding: 12px 0;
+  }
+  .dow-row{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--sage-soft);
+  }
+  .dow-row span{
+    text-align:center;
+    font-size:11.5px;
+    font-weight:700;
+    color:#3f5a3c;
+    padding: 7px 0;
+    letter-spacing:.5px;
+  }
+  .days-grid{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .day-cell{
+    min-height: 68px;
+    border-right: 1px solid #f0f1f4;
+    border-bottom: 1px solid #f0f1f4;
+    padding: 5px 5px 4px 6px;
+    position: relative;
+    font-size: 12px;
+  }
+  .day-cell.blank{ background: #fafafa; }
+  .day-cell .dnum{
+    font-size: 13px; font-weight:700; color:#8892a0;
+  }
+  .day-cell.has-leave{
+    background: #fdf6e6;
+  }
+  .day-cell.has-leave .dnum{ color: var(--navy); }
+  .leave-tag{
+    display:block;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #8a6a1f;
+    background: var(--gold-soft);
+    border-radius: 4px;
+    padding: 1.5px 5px;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .leave-tag.half{
+    background: #f6ddd2;
+    color: #a1462a;
+  }
+
+  /* ---------- FOOTER / LEGEND ---------- */
+  .cal-footer{
+    border-top: 2px solid var(--navy);
+    background: #fbf8f1;
+    padding: 16px 40px;
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11.5px;
+    color: #6b7686;
+  }
+  .cal-footer b{ color: var(--navy); }
+  .footer-legend{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .footer-legend .sw{ display:inline-flex; align-items:center; gap:5px; }
+  .footer-legend .box{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+
+  .loading, .empty-note{
+    padding: 30px; text-align:center; color:#8892a0; font-size:13px;
+  }
+
+  @media (max-width: 900px){
+    .months-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px){
+    .months-grid{ grid-template-columns: 1fr; }
+    .header{ flex-direction:column; align-items:flex-start; }
+    .title-block{ margin-left:0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="connBanner">⚠ Couldn't reach the shared server — this calendar may be out of date. Check your connection and refresh.</div>
+
+<div class="sheet">
+  <div class="header">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 60 60">
+        <circle cx="30" cy="30" r="28" fill="none" stroke="#16305c" stroke-width="2"/>
+        <path d="M30 10 L30 42 M18 22 Q30 14 42 22 L30 42 L18 22 Z" fill="#c79a3d" opacity="0.9"/>
+        <path d="M14 46 Q30 54 46 46" fill="none" stroke="#16305c" stroke-width="2"/>
+      </svg>
+      <div class="brand-text">
+        <div class="su">SU</div>
+        <div class="sub">SCRIPTURE UNION<br>SINGAPORE</div>
+      </div>
+    </div>
+    <div class="title-block">
+      <h1>LEAVE CALENDAR</h1>
+      <div class="tagline">Read-only reference · who's on leave, and when</div>
+    </div>
+    <a href="index.html" class="back-btn">← Back to Dashboard</a>
+  </div>
+
+  <div class="year-nav">
+    <button onclick="changeYear(-1)">‹</button>
+    <div class="year-label" id="yearLabel">–</div>
+    <button onclick="changeYear(1)">›</button>
+  </div>
+
+  <div class="cal-body">
+    <div id="calContent" class="loading">Loading calendar…</div>
+  </div>
+
+  <div class="cal-footer">
+    <div><b>Source:</b> Approved leave applications (Pending Approval panel on Dashboard)</div>
+    <div class="footer-legend">
+      <span class="sw"><span class="box" style="background:var(--gold-soft);"></span> Full day on leave</span>
+      <span class="sw"><span class="box" style="background:#f6ddd2;"></span> Half day (0.5)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const REQUESTS_ENDPOINT = "/.netlify/functions/leave-requests";
+let currentYear = new Date().getFullYear();
+
+function setConnBanner(show){
+  document.getElementById('connBanner').style.display = show ? 'block' : 'none';
+}
+
+async function loadRequests(){
+  try{
+    const res = await fetch(REQUESTS_ENDPOINT);
+    if(!res.ok) throw new Error("Server responded with " + res.status);
+    return await res.json();
+  }catch(e){
+    console.error("Failed to load shared requests", e);
+    return null;
+  }
+}
+
+function getInitials(name){
+  return name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,3);
+}
+
+// Build a { 'YYYY-MM-DD': [{name, half}] } map from approved requests,
+// honouring approved cancellations that match an approved application.
+function buildDayMap(requests){
+  const dayMap = {};
+  const cancelledKeys = new Set();
+
+  requests.filter(r=>r.kind==='cancel' && r.status==='approved').forEach(r=>{
+    cancelledKeys.add(`${r.name}|${r.type}|${r.start}|${r.end}`);
+  });
+
+// Parse/format 'YYYY-MM-DD' using UTC throughout, so date math never
+// shifts by a day due to the browser's local timezone (this was the bug
+// causing approved leave not to show up correctly).
+function parseISODate(s){
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function formatISODate(d){
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+
+  requests.filter(r=>r.kind==='apply' && r.status==='approved').forEach(r=>{
+    if(!r.start || !r.end) return;
+    const key = `${r.name}|${r.type}|${r.start}|${r.end}`;
+    if(cancelledKeys.has(key)) return;
+
+    const isHalfDay = (r.holidays === 0.5 || r.holidays === "0.5") && r.start === r.end;
+
+    let d = parseISODate(r.start);
+    const endD = parseISODate(r.end);
+    while(d <= endD){
+      const dateKey = formatISODate(d);
+      if(!dayMap[dateKey]) dayMap[dateKey] = [];
+      dayMap[dateKey].push({ name: r.name, half: isHalfDay });
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+  });
+
+  return dayMap;
+}
+
+const MONTH_NAMES = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+const DOW = ["MO","TU","WE","TH","FR","SA","SU"];
+
+function renderMonth(year, monthIdx, dayMap){
+  const first = new Date(year, monthIdx, 1);
+  const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+  // Monday = 0 ... Sunday = 6
+  const startOffset = (first.getDay() + 6) % 7;
+
+  let cellsHtml = "";
+  for(let i=0; i<startOffset; i++){
+    cellsHtml += `<div class="day-cell blank"></div>`;
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const dateKey = `${year}-${String(monthIdx+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const entries = dayMap[dateKey] || [];
+    const hasLeave = entries.length > 0;
+    const tags = entries.map(e=>{
+      const label = getInitials(e.name) + (e.half ? ' ½' : '');
+      return `<span class="leave-tag ${e.half ? 'half' : ''}" title="${e.name}${e.half ? ' (half day)' : ''}">${label}</span>`;
+    }).join("");
+    cellsHtml += `
+      <div class="day-cell ${hasLeave ? 'has-leave' : ''}">
+        <span class="dnum">${day}</span>
+        ${tags}
+      </div>`;
+  }
+
+  return `
+    <div class="month-card">
+      <div class="month-head">${MONTH_NAMES[monthIdx]} ${year}</div>
+      <div class="dow-row">${DOW.map(d=>`<span>${d}</span>`).join("")}</div>
+      <div class="days-grid">${cellsHtml}</div>
+    </div>`;
+}
+
+async function render(){
+  document.getElementById('yearLabel').textContent = currentYear;
+  const calEl = document.getElementById('calContent');
+
+  const requests = await loadRequests();
+  setConnBanner(requests === null);
+  const dayMap = buildDayMap(requests || []);
+
+  const anyLeaveThisYear = Object.keys(dayMap).some(k => k.startsWith(String(currentYear)));
+
+  let html = `<div class="months-grid">`;
+  for(let m=0; m<12; m++){
+    html += renderMonth(currentYear, m, dayMap);
+  }
+  html += `</div>`;
+  calEl.className = "";
+  calEl.innerHTML = html;
+
+  if(!anyLeaveThisYear){
+    calEl.innerHTML = `<div class="empty-note">No approved leave recorded for ${currentYear} yet.</div>` + calEl.innerHTML;
+  }
+}
+
+function changeYear(delta){
+  currentYear += delta;
+  render();
+}
+
+render();
+</script>
+
+</body>
+</html>
