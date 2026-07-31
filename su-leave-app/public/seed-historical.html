@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SU Singapore — Seed Historical Leave</title>
+<style>
+  :root{
+    --navy: #16305c; --navy-deep: #0e2144; --gold: #c79a3d; --gold-soft: #e8cf8f;
+    --cream: #fbf8f1; --sage: #7c9a76; --sage-soft: #d8e6d3; --coral: #d9714e;
+    --ink: #23324a; --line: #dfe3ea;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background: var(--cream); font-family:'Segoe UI',sans-serif; color:var(--ink); padding: 28px; }
+  .sheet{ max-width: 700px; margin: 0 auto; background:#fff; border:2px solid var(--navy); border-radius:10px; overflow:hidden; }
+  .header{ padding: 22px 30px; border-bottom: 3px solid var(--navy); background: linear-gradient(180deg,#fff 0%, #fbf8f1 100%); }
+  .header h1{ font-family: Georgia, serif; color: var(--navy); font-size: 22px; margin:0 0 4px 0; }
+  .header p{ margin:0; color:#6b7686; font-size:13px; }
+  .body{ padding: 24px 30px; }
+  table{ width:100%; border-collapse: collapse; margin-bottom: 20px; font-size:13px; }
+  th, td{ text-align:left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th{ color: var(--navy); font-size:11.5px; letter-spacing:.5px; }
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size:12px; font-weight:700; color:var(--navy); margin-bottom:5px; }
+  .field input{ width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:6px; font-size:13.5px; }
+  button{
+    background: var(--gold); color: var(--navy-deep); border:none; font-weight:800; font-size:13.5px;
+    padding: 11px 20px; border-radius: 6px 16px 6px 16px; cursor:pointer; width:100%;
+  }
+  button:hover{ background: var(--gold-soft); }
+  #result{ margin-top: 18px; font-size: 13px; white-space: pre-wrap; }
+  .ok{ color: #3f5a3c; }
+  .err{ color: #a1462a; }
+  .note{ font-size:11.5px; color:#8892a0; margin-bottom:16px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="header">
+    <h1>Seed Historical Leave (one-time admin tool)</h1>
+    <p>Pushes already-taken leave into the shared calendar. Marked "historical" — never affects dashboard balances, never appears in Pending Approval, and running this twice will not create duplicates.</p>
+  </div>
+  <div class="body">
+    <table>
+      <tr><th>Name</th><th>Dates</th><th>Days</th></tr>
+      <tr><td>Ruth ONG</td><td>16 Sep 2026</td><td>1</td></tr>
+      <tr><td>Ruth ONG</td><td>21–22 Sep 2026</td><td>2</td></tr>
+      <tr><td>Christine LIM</td><td>5–12 Oct 2026</td><td>8</td></tr>
+      <tr><td>Christine LIM</td><td>21–24 Dec 2026</td><td>4</td></tr>
+      <tr><td>Gillian CHONG</td><td>10–16 Nov 2026</td><td>7</td></tr>
+      <tr><td>Lilis LIM</td><td>12–21 Sep 2026</td><td>10</td></tr>
+      <tr><td>LIM Yu Ming</td><td>14 Aug 2026</td><td>1</td></tr>
+    </table>
+    <div class="note">Day counts above are inclusive calendar days (weekends not excluded) — adjust the code if you need working-day-only counts. This requires the same approver password.</div>
+
+    <form id="seedForm">
+      <div class="field">
+        <label>Your Scripture Union email</label>
+        <input type="email" id="sEmail" placeholder="you@scriptureunion.sg" required>
+      </div>
+      <div class="field">
+        <label>Approval password</label>
+        <input type="password" id="sPassword" required>
+      </div>
+      <button type="submit">Push Historical Leave to Shared Calendar</button>
+    </form>
+    <div id="result"></div>
+  </div>
+</div>
+
+<script>
+const APPROVAL_PASSWORD = "Psalm119:105";
+const REQUESTS_ENDPOINT = "/.netlify/functions/leave-requests";
+
+const HISTORICAL_ENTRIES = [
+  { name: "Ruth ONG",      start: "2026-09-16", end: "2026-09-16", days: 1  },
+  { name: "Ruth ONG",      start: "2026-09-21", end: "2026-09-22", days: 2  },
+  { name: "Christine LIM", start: "2026-10-05", end: "2026-10-12", days: 8  },
+  { name: "Christine LIM", start: "2026-12-21", end: "2026-12-24", days: 4  },
+  { name: "Gillian CHONG", start: "2026-11-10", end: "2026-11-16", days: 7  },
+  { name: "Lilis LIM",     start: "2026-09-12", end: "2026-09-21", days: 10 },
+  { name: "LIM Yu Ming",   start: "2026-08-14", end: "2026-08-14", days: 1  },
+];
+
+function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+document.getElementById('seedForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('sEmail').value.trim().toLowerCase();
+  const password = document.getElementById('sPassword').value;
+  const resultEl = document.getElementById('result');
+  resultEl.className = ""; resultEl.textContent = "";
+
+  if(!email.endsWith('@scriptureunion.sg')){
+    resultEl.className = "err"; resultEl.textContent = "Please use a scriptureunion.sg email address.";
+    return;
+  }
+  if(password !== APPROVAL_PASSWORD){
+    resultEl.className = "err"; resultEl.textContent = "Incorrect password.";
+    return;
+  }
+
+  resultEl.textContent = "Working…";
+
+  let list;
+  try{
+    const res = await fetch(REQUESTS_ENDPOINT);
+    if(!res.ok) throw new Error("Server responded with " + res.status);
+    list = await res.json();
+  }catch(err){
+    resultEl.className = "err"; resultEl.textContent = "Couldn't reach the shared server: " + err.message;
+    return;
+  }
+
+  const existingKeys = new Set(
+    list.filter(r=>r.historical).map(r=>`${r.name}|${r.start}|${r.end}`)
+  );
+
+  let added = 0, skipped = 0;
+  const now = new Date().toISOString();
+  HISTORICAL_ENTRIES.forEach(h=>{
+    const key = `${h.name}|${h.start}|${h.end}`;
+    if(existingKeys.has(key)){ skipped++; return; }
+    list.push({
+      id: genId(),
+      kind: "apply",
+      historical: true,
+      name: h.name,
+      type: "Annual Leave",
+      dept: "—",
+      email: "—",
+      start: h.start,
+      end: h.end,
+      days: h.days,
+      holidays: 0, saturdays: 0, sundays: 0,
+      status: "approved",
+      submitted: now,
+      decidedAt: now,
+      approverEmail: email + " (historical seed)"
+    });
+    added++;
+  });
+
+  try{
+    const saveRes = await fetch(REQUESTS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(list)
+    });
+    if(!saveRes.ok) throw new Error("Server responded with " + saveRes.status);
+  }catch(err){
+    resultEl.className = "err"; resultEl.textContent = "Save failed: " + err.message;
+    return;
+  }
+
+  resultEl.className = "ok";
+  resultEl.textContent = `Done. Added ${added} entrie(s), skipped ${skipped} already-present entrie(s).\nCheck the calendar page to confirm.`;
+});
+</script>
+</body>
+</html>
